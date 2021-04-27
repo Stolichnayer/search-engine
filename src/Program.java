@@ -1,14 +1,14 @@
 import mitos.stemmer.Stemmer;
 import gr.uoc.csd.hy463.*;
-
 import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.*;
 
 public class Program
 {
+    public static ArrayList<String> stopwordsEn;
+    public static ArrayList<String> stopwordsGr;
+    public static HashMap<String, HashMap<String, Integer>> uniqueWords = new HashMap<>();
+
     public static ArrayList<String> readStopwords(String path)
     {
         BufferedReader reader;
@@ -33,6 +33,38 @@ public class Program
         return words;
     }
 
+    public static void addUniqueWordsByTag(String text, String tag)
+    {
+        String delimiter = "\t\n\r\f ";
+
+        StringTokenizer tokenizer = new StringTokenizer(text, delimiter);
+
+        while (tokenizer.hasMoreTokens())
+        {
+            String currentToken = tokenizer.nextToken().replaceAll("[^a-zA-Z0-9]", "").toLowerCase(Locale.ROOT);
+
+            if (currentToken.equals(""))
+                continue;
+
+            if (uniqueWords.containsKey(currentToken))
+            {
+                var tags = uniqueWords.get(currentToken);
+
+                Object tagCount = tags.get(tag);
+                int value = tagCount != null? (int)tagCount : 0;
+                tags.put(tag, (value + 1));
+                uniqueWords.replace(currentToken, tags);
+            }
+            else
+            {
+                var tags = new HashMap<String, Integer>();
+                tags.put(tag, 1);
+                uniqueWords.put(currentToken, tags);
+            }
+
+        }
+
+    }
 
     public static void main(String[] args) throws Exception
     {
@@ -62,9 +94,19 @@ public class Program
         System.out.println("- Authors: " + authors);
         System.out.println("- Categories: " + categories);*/
 
-        ArrayList<String> stopwordsEn = readStopwords("resources\\Stoplists\\stopwordsEn.txt");
+        stopwordsEn = readStopwords("resources\\Stoplists\\stopwordsEn.txt");
+        stopwordsGr = readStopwords("resources\\Stoplists\\stopwordsGr.txt");
 
 
+        addUniqueWordsByTag(abstr, "abstract");
 
+        addUniqueWordsByTag(body, "body");
+
+        for (String str : uniqueWords.keySet())
+        {
+            String value = uniqueWords.get(str).toString();
+
+            System.out.println(str + " " + value);
+        }
     }
 }
