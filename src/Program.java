@@ -41,9 +41,11 @@ public class Program
 
         while (tokenizer.hasMoreTokens())
         {
+            // Remove punctuation marks and transform to lowercase
             String currentToken = tokenizer.nextToken().replaceAll("[^a-zA-Z0-9]", "").toLowerCase(Locale.ROOT);
 
-            if (currentToken.equals(""))
+            // Check if current token is blank or a stopword
+            if (currentToken.equals("") || stopwordsEn.contains(currentToken))
                 continue;
 
             if (uniqueWords.containsKey(currentToken))
@@ -108,5 +110,7 @@ public class Program
 
             System.out.println(str + " " + value);
         }
+
+        System.out.println("Number of unique words: " + uniqueWords.size());
     }
 }
