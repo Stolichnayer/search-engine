@@ -1,13 +1,17 @@
-import mitos.stemmer.Stemmer;
 import gr.uoc.csd.hy463.*;
 import java.io.*;
 import java.util.*;
+
+import static java.lang.System.currentTimeMillis;
 
 public class Program
 {
     public static ArrayList<String> stopwordsEn;
     public static ArrayList<String> stopwordsGr;
-    public static HashMap<String, HashMap<String, Integer>> uniqueWords = new HashMap<>();
+    public static HashMap<String, HashMap<String, HashMap<String, Integer>>> uniqueWords = new HashMap<>();
+
+    // HashMap = { key: file ID, value: file Path }
+    public static HashMap<String, String> files = new HashMap<>();
 
     public static ArrayList<String> readStopwords(String path)
     {
@@ -33,9 +37,12 @@ public class Program
         return words;
     }
 
-    public static void addUniqueWordsByTag(String text, String tag)
+    public static void addUniqueWordsByTagAndFile(String text, String fileID, String tag)
     {
         String delimiter = "\t\n\r\f ";
+
+        if (text == null || text.equals(""))
+            return;
 
         StringTokenizer tokenizer = new StringTokenizer(text, delimiter);
 
@@ -50,22 +57,92 @@ public class Program
 
             if (uniqueWords.containsKey(currentToken))
             {
-                var tags = uniqueWords.get(currentToken);
+                var fileMap = uniqueWords.get(currentToken);
+                var tagsMap = fileMap.get(fileID);
 
-                Object tagCount = tags.get(tag);
+                if (tagsMap == null)
+                {
+                    tagsMap = new HashMap<>();
+                }
+
+                Object tagCount = tagsMap.get(tag);
                 int value = tagCount != null? (int)tagCount : 0;
-                tags.put(tag, (value + 1));
-                uniqueWords.replace(currentToken, tags);
+                tagsMap.put(tag, (value + 1));
+                fileMap.put(fileID, tagsMap);
+                uniqueWords.replace(currentToken, fileMap);
             }
             else
             {
-                var tags = new HashMap<String, Integer>();
-                tags.put(tag, 1);
-                uniqueWords.put(currentToken, tags);
+                //                      K: fileID,   V: { K: tag, V: count }
+                var fileMap = new HashMap<String, HashMap<String, Integer>>();
+                var tagsMap = new HashMap<String, Integer>();
+                tagsMap.put(tag, 1);
+                fileMap.put(fileID, tagsMap);
+                uniqueWords.put(currentToken, fileMap);
             }
 
         }
 
+    }
+
+    public static void getAllFilesInFolder(File folder)
+    {
+        for (File fileEntry : Objects.requireNonNull(folder.listFiles()))
+        {
+            if (fileEntry.isDirectory())
+            {
+                getAllFilesInFolder(fileEntry);
+            }
+            else
+            {
+                // Add file path in files HashMap
+                files.put(fileEntry.getName(), fileEntry.getPath());
+            }
+        }
+    }
+
+    public static void AddUniqueWordsForEveryFile() throws IOException
+    {
+        // Add unique words for every tag in every file
+        for (String key : files.keySet())
+        {
+            File file = new File(files.get(key));
+            NXMLFileReader xmlFile = new NXMLFileReader(file);
+
+            String pmcid = xmlFile.getPMCID();
+            String title = xmlFile.getTitle();
+            String abstr = xmlFile.getAbstr();
+            String body = xmlFile.getBody();
+            String journal = xmlFile.getJournal();
+            String publisher = xmlFile.getPublisher();
+            ArrayList<String> authors = xmlFile.getAuthors();
+            HashSet<String> categories = xmlFile.getCategories();
+
+
+            // add unique words for every tag
+            addUniqueWordsByTagAndFile(title, key,"title");
+            addUniqueWordsByTagAndFile(abstr, key,"abstract");
+            addUniqueWordsByTagAndFile(body, key,"body");
+            addUniqueWordsByTagAndFile(journal, key,"journal");
+            addUniqueWordsByTagAndFile(publisher, key,"publisher");
+
+            for (String author : authors)
+            {
+                addUniqueWordsByTagAndFile(author, key,"authors");
+            }
+
+            for (String category : categories)
+            {
+                addUniqueWordsByTagAndFile(category, key,"categories");
+            }
+        }
+
+        for (String str : uniqueWords.keySet())
+        {
+            String value = uniqueWords.get(str).toString();
+
+            System.out.println(str + " " + value);
+        }
     }
 
     public static void main(String[] args) throws Exception
@@ -74,43 +151,28 @@ public class Program
         //           2. Print [number of different words]
         //           3. Print [each different word, [tag1 count1], [tag2 count2], ...]
         //           4. Ignore stop words
+        //  DONE
 
-        File file = new File("resources\\Collections\\MiniCollection\\diagnosis\\Topic_1\\0\\1852545.nxml");
+        // TODO: B2) 1. Read all files in a directory
+        //           2. Print [word, [tag1 count1], [tag2 count2], ...]
 
-        NXMLFileReader xmlFile = new NXMLFileReader(file);
-        String pmcid = xmlFile.getPMCID();
-        String title = xmlFile.getTitle();
-        String abstr = xmlFile.getAbstr();
-        String body = xmlFile.getBody();
-        String journal = xmlFile.getJournal();
-        String publisher = xmlFile.getPublisher();
-        ArrayList<String> authors = xmlFile.getAuthors();
-        HashSet<String> categories = xmlFile.getCategories();
 
-/*        System.out.println("- PMC ID: " + pmcid);
-        System.out.println("- Title: " + title);
-        System.out.println("- Abstract: " + abstr);
-        System.out.println("- Body: " + body);
-        System.out.println("- Journal: " + journal);
-        System.out.println("- Publisher: " + publisher);
-        System.out.println("- Authors: " + authors);
-        System.out.println("- Categories: " + categories);*/
-
+        // Load stopwords from file to memory
         stopwordsEn = readStopwords("resources\\Stoplists\\stopwordsEn.txt");
         stopwordsGr = readStopwords("resources\\Stoplists\\stopwordsGr.txt");
 
+        // Get all files recursively in all subfolders
+        getAllFilesInFolder(new File("resources\\Collections"));
 
-        addUniqueWordsByTag(abstr, "abstract");
+        // Start counting time
+        var startTime = currentTimeMillis();
 
-        addUniqueWordsByTag(body, "body");
+        AddUniqueWordsForEveryFile();
 
-        for (String str : uniqueWords.keySet())
-        {
-            String value = uniqueWords.get(str).toString();
+        System.out.println("\nNumber of unique words: " + uniqueWords.size());
 
-            System.out.println(str + " " + value);
-        }
+        System.out.println((currentTimeMillis() - startTime) / 1000.0 + " seconds");
 
-        System.out.println("Number of unique words: " + uniqueWords.size());
+
     }
 }
