@@ -1,8 +1,75 @@
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.TreeMap;
 
 public class Evaluation
 {
+    public static int calculateFrequency(String word, String fileID)
+    {
+        var words = Program.uniqueWords;
+        var wordFiles = words.get(word);
+        var tags = wordFiles.get(fileID);
+
+        int sum = 0;
+
+        // if fileID key exists in value HashMap of words HashMap
+        if (tags != null)
+        {
+            // Sum every count of word in tags
+            for (int count : tags.values())
+            {
+                sum += count;
+            }
+        }
+
+        return sum;
+    }
+
+    public static HashMap<String, Integer> calculateMaxFreqs()
+    {
+        var files = Program.files;
+        var words = Program.uniqueWords;
+
+        var maxFreqs = new HashMap<String, Integer>();
+
+        // For every file
+        String aa = "";
+        for (String fileID : files.keySet())
+        {
+            int maxFreq = 0;
+
+            // For every word
+            for (String word : words.keySet())
+            {
+                int freq = calculateFrequency(word, fileID);
+
+                // Check for max freq
+                if (freq > maxFreq)
+                {
+                    maxFreq = freq;
+                    aa = word;
+                }
+
+            }
+
+            maxFreqs.put(fileID, maxFreq);
+            // System.out.println(fileID + ", " + maxFreq + " " + aa);
+        }
+
+        return maxFreqs;
+    }
+
+    public static HashMap<String, Integer> getTFs(String word, TreeMap<String, HashMap<String, HashMap<String, Integer>>> words)
+    {
+        // For every word: HashMap<fileID, frequency>
+        HashMap<String, Integer> freqs = new HashMap<>();
+
+
+
+        return freqs;
+    }
+
     public static float getIDF(String word)
     {
         float df = Program.uniqueWords.get(word).size();
@@ -38,6 +105,7 @@ public class Evaluation
         }
 
         // Get the max term frequency
+        // TODO: maybe wrong!!!!!!!!!!!!!!!!!!!!!!!!!!!
         float max_freq = Collections.max(freqs);
 
         float sum = 0;

@@ -175,19 +175,26 @@ public class Program
         }
     }
 
-    public static void writeVocabularyFile()
+    public static void writeVocabularyFile(ArrayList<Integer> wordPositions)
     {
-        // Create CollectionIndex directory
-        createDirectory("CollectionIndex");
-
         RandomAccessFile file;
         try
         {
             file = new RandomAccessFile("CollectionIndex\\VocabularyFile.txt", "rw");
 
+            int termNum = 0;
             for (String word : uniqueWords.keySet())
             {
-                String row = word + " " + uniqueWords.get(word).size() + "\n";
+                // Calculate document frequency
+                int df = uniqueWords.get(word).size();
+
+                // Get word position (pointer) in PostingFile.txt --> O(1) complexity
+                int pointer = wordPositions.get(termNum++);
+
+                // Construct row
+                String row = word + " " + df + " " + pointer + "\n";
+
+                // Write row to file
                 file.writeBytes(row);
             }
 
@@ -229,6 +236,64 @@ public class Program
         }
     }
 
+    public static ArrayList<Integer> writePostingFile() throws IOException
+    {
+        // Open file for write
+        RandomAccessFile file;
+        try
+        {
+            file = new RandomAccessFile("CollectionIndex\\PostingFile.txt", "rw");
+            System.out.println("\nPostingFile.txt was created successfully.");
+        }
+        catch (Exception e)
+        {
+            System.out.println("\nPostingFile.txt could not be created.");
+            // e.printStackTrace();
+            return null;
+        }
+
+        // Get a map with max frequencies of all files
+        var maxFreqs = Evaluation.calculateMaxFreqs();
+
+        // Create arraylist of every term row position to use as pointer in VocabularyFile.txt
+        var positions = new ArrayList<Integer>();
+
+        // Initial position
+        int termPosition = 1;
+
+        // For every word in uniqueWords map
+        for (String word : uniqueWords.keySet())
+        {
+            // Add term position to ArrayList to use it in VocabularyFile.txt
+            positions.add(termPosition);
+
+            // For every file that word exists in
+            for (String fileID : uniqueWords.get(word).keySet())
+            {
+                // Calculate term frequency of term = word in file = fileID
+                int freq = Evaluation.calculateFrequency(word, fileID);
+                int maxFreq = maxFreqs.get(fileID);
+                float tf = (float)freq / (float)maxFreq;
+
+                String row = word + " " + fileID + " " + tf + "\n";
+                file.writeBytes(row);
+
+                // Increase term position by 1 for every document
+                termPosition++;
+
+            }
+
+            // Split words (terms)
+            //file.writeBytes("------------------------------------------\n");
+        }
+
+        // Close file
+        file.close();
+
+        System.out.println(positions);
+        return positions;
+    }
+
     public static void main(String[] args) throws Exception
     {
         // TODO (DONE) : B1) 1. Read tags and content of an XML file
@@ -260,14 +325,21 @@ public class Program
         // Start counting time
         var startTime = currentTimeMillis();
 
-        // Save
+        // Save unique words
         addUniqueWordsForEveryFile();
 
+        // Create CollectionIndex directory
+        createDirectory("CollectionIndex");
+
+        // Create PostingFile.txt
+        var termPositions = writePostingFile();
+
         // Create VocabularyFile.txt
-        writeVocabularyFile();
+        writeVocabularyFile(termPositions);
 
         // Create DocumentsFile.txt
         writeDocumentsFile();
+
 
 
         // Print the number of unique words
