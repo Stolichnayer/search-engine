@@ -19,6 +19,10 @@ public class Program
     // Save all .nxml files in a TreeMap = { key: file ID, value: file Path }, sorted lexicographically by fileID
     public static TreeMap<String, String> files = new TreeMap<>();
 
+    // HashMap {key: file ID, value: content} to reduce IO bound
+    public static HashMap<String, String> fileCache = new HashMap<>();
+
+
     // Functions
     public static ArrayList<String> readStopwords(String path)
     {
@@ -154,6 +158,42 @@ public class Program
         }
     }
 
+    public static void loadFilesToMemory(int limit) throws IOException
+    {
+        int size = 0 ;
+        for (String fileID : files.keySet())
+        {
+            // Open file from fileID (path of file in files Map)
+            File file = new File(files.get(fileID));
+
+            // Read file
+            BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+
+            StringBuilder content = new StringBuilder();
+            String line;
+
+
+            while ((line = in.readLine()) != null)
+            {
+                content.append(line.toLowerCase());
+            }
+
+            // Put pair in hashmap
+            fileCache.put(fileID, content.toString());
+
+            // Update size
+            size += fileID.length() + content.length();
+
+            // Break if limit of file size reaches (MB to Bytes)
+            if (size >= limit * 1024 * 1024)
+            {
+                System.out.println("LIMIT" + size);
+                return;
+            }
+        }
+
+    }
+
     public static void createDirectory(String dirName)
     {
         // Create directory CollectionIndex
@@ -256,7 +296,7 @@ public class Program
         var maxFreqs = Evaluation.calculateMaxFreqs();
 
         // Create arraylist of every term row position to use as pointer in VocabularyFile.txt
-        var positions = new ArrayList<Integer>();
+        var vocabularyPointers = new ArrayList<Integer>();
 
         // Initial position
         int termPosition = 1;
@@ -265,7 +305,7 @@ public class Program
         for (String word : uniqueWords.keySet())
         {
             // Add term position to ArrayList to use it in VocabularyFile.txt
-            positions.add(termPosition);
+            vocabularyPointers.add(termPosition);
 
             // For every file that word exists in
             for (String fileID : uniqueWords.get(word).keySet())
@@ -275,12 +315,12 @@ public class Program
                 int maxFreq = maxFreqs.get(fileID);
                 float tf = (float)freq / (float)maxFreq;
 
-                String row = word + " " + fileID + " " + tf + "\n";
+                var termPositionsInFile = calculateTermPositions(fileID, Stemmer.Stem(word));
+                String row = word + " " + fileID + " " + tf + " " + termPositionsInFile + "\n";
                 file.writeBytes(row);
 
                 // Increase term position by 1 for every document
                 termPosition++;
-
             }
 
             // Split words (terms)
@@ -290,7 +330,45 @@ public class Program
         // Close file
         file.close();
 
-        System.out.println(positions);
+        return vocabularyPointers;
+    }
+
+    public static ArrayList<Integer> calculateTermPositions(String fileID, String term) throws IOException
+    {
+        // Open file from fileID (path of file in files Map)
+        File file = new File(files.get(fileID));
+
+        StringBuilder content = new StringBuilder();
+
+        // Check if file already exists in our cache (SUPER FAST!)
+        if (fileCache.containsKey(fileID))
+        {
+            content.append(fileCache.get(fileID));
+        }
+        else // Old slow boring way
+        {
+            BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+
+            String line;
+            while ((line = in.readLine()) != null)
+            {
+                content.append(line.toLowerCase());
+            }
+
+            in.close();
+        }
+
+
+        var positions = new ArrayList<Integer>();
+
+        // Find all occurrences of word
+        int previous = 0;
+        for (int i = -1; (i = content.indexOf(term, i + 1)) != -1; i++)
+        {
+            positions.add(i + 1 - previous);
+            previous = i + 1;
+        }
+
         return positions;
     }
 
@@ -328,6 +406,9 @@ public class Program
         // Save unique words
         addUniqueWordsForEveryFile();
 
+        // Create file cache (limit in MB) TODO: GUI enter memory limit
+        loadFilesToMemory(6);
+
         // Create CollectionIndex directory
         createDirectory("CollectionIndex");
 
@@ -339,8 +420,6 @@ public class Program
 
         // Create DocumentsFile.txt
         writeDocumentsFile();
-
-
 
         // Print the number of unique words
         System.out.println("\nNumber of unique words: " + uniqueWords.size());
