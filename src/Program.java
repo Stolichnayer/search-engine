@@ -2,13 +2,19 @@ import gr.uoc.csd.hy463.*;
 import mitos.stemmer.Stemmer;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 import static java.lang.System.currentTimeMillis;
 
 public class Program
 {
+    // Size of max size of cached files in memory in MB
+    public final static int MEMORY_LIMIT = 6;
+
     // English and Greek stopwords saved in memory as ArrayLists
     public static ArrayList<String> stopwordsEn;
     public static ArrayList<String> stopwordsGr;
@@ -163,31 +169,19 @@ public class Program
         int size = 0 ;
         for (String fileID : files.keySet())
         {
-            // Open file from fileID (path of file in files Map)
-            File file = new File(files.get(fileID));
-
-            // Read file
-            BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-
-            StringBuilder content = new StringBuilder();
-            String line;
-
-
-            while ((line = in.readLine()) != null)
-            {
-                content.append(line.toLowerCase());
-            }
+            String filePath = files.get(fileID);
+            String fileContent = Files.readString(Paths.get(filePath)).replaceAll("[^a-zA-Z0-9]", "").toLowerCase(Locale.ROOT);
 
             // Put pair in hashmap
-            fileCache.put(fileID, content.toString());
+            fileCache.put(fileID, fileContent);
 
             // Update size
-            size += fileID.length() + content.length();
+            size += fileID.length() + fileContent.length();
 
             // Break if limit of file size reaches (MB to Bytes)
             if (size >= limit * 1024 * 1024)
             {
-                System.out.println("LIMIT" + size);
+                System.out.println("LIMIT " + size);
                 return;
             }
         }
@@ -314,9 +308,10 @@ public class Program
                 int freq = Evaluation.calculateFrequency(word, fileID);
                 int maxFreq = maxFreqs.get(fileID);
                 float tf = (float)freq / (float)maxFreq;
+                var termPositionsInFile = calculateTermPositions(fileID, word);
+                int documentsFilePosition = files.headMap(fileID).size() + 1;
 
-                var termPositionsInFile = calculateTermPositions(fileID, Stemmer.Stem(word));
-                String row = word + " " + fileID + " " + tf + " " + termPositionsInFile + "\n";
+                String row = word + " " + fileID + " " + tf + " " + termPositionsInFile + " " + documentsFilePosition + "\n";
                 file.writeBytes(row);
 
                 // Increase term position by 1 for every document
@@ -336,28 +331,20 @@ public class Program
     public static ArrayList<Integer> calculateTermPositions(String fileID, String term) throws IOException
     {
         // Open file from fileID (path of file in files Map)
-        File file = new File(files.get(fileID));
+        String filePath = files.get(fileID);
 
-        StringBuilder content = new StringBuilder();
+        String content;
 
         // Check if file already exists in our cache (SUPER FAST!)
         if (fileCache.containsKey(fileID))
         {
-            content.append(fileCache.get(fileID));
+            content = fileCache.get(fileID);
         }
         else // Old slow boring way
         {
-            BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-
-            String line;
-            while ((line = in.readLine()) != null)
-            {
-                content.append(line.toLowerCase());
-            }
-
-            in.close();
+            //replaceAll("[^a-zA-Z0-9]", "")
+            content = Files.readString(Paths.get(filePath)).replaceAll("[^a-zA-Z0-9]", "").toLowerCase(Locale.ROOT);
         }
-
 
         var positions = new ArrayList<Integer>();
 
@@ -374,22 +361,6 @@ public class Program
 
     public static void main(String[] args) throws Exception
     {
-        // TODO (DONE) : B1) 1. Read tags and content of an XML file
-        //                   2. Print [number of different words]
-        //                   3. Print [each different word, [tag1 count1], [tag2 count2], ...]
-        //                   4. Ignore stop words
-
-        // TODO (DONE): B2) 1. Read all files in a directory
-        //                  2. Print [word, [tag1 count1], [tag2 count2], ...]
-
-        // TODO (DONE)  B3) 1. Stemming
-
-        // TODO (DONE)  B4) 1. Create CollectionIndex folder
-        //                  2. Create VocabularyFile.txt [word, document frequency (df)]
-
-        // TODO (DONE)  B5) 1. Create DocumentsFile.txt [fileID, filePath, vector length (norma)]
-
-
         // Load stopwords from file to memory
         stopwordsEn = readStopwords("resources\\Stoplists\\stopwordsEn.txt");
         stopwordsGr = readStopwords("resources\\Stoplists\\stopwordsGr.txt");
@@ -407,7 +378,7 @@ public class Program
         addUniqueWordsForEveryFile();
 
         // Create file cache (limit in MB) TODO: GUI enter memory limit
-        loadFilesToMemory(6);
+        loadFilesToMemory(MEMORY_LIMIT);
 
         // Create CollectionIndex directory
         createDirectory("CollectionIndex");
