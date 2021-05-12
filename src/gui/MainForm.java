@@ -1,5 +1,6 @@
 package gui;
 
+import evaluator.Search;
 import indexer.Indexer;
 
 import java.awt.Color;
@@ -11,6 +12,8 @@ import java.awt.event.MouseListener;
 import java.io.File;
 import javax.swing.*;
 import javax.swing.text.DefaultCaret;
+
+import static java.lang.System.currentTimeMillis;
 
 /**
  * @author Alexandros Perrakis csd3826
@@ -55,6 +58,7 @@ public class MainForm extends javax.swing.JFrame
         jScrollPaneAnswers = new javax.swing.JScrollPane();
         jPanel1 = new javax.swing.JPanel();
         jComboBoxType = new javax.swing.JComboBox<>();
+        jLabelQueryTime = new javax.swing.JLabel();
         jPanelLeftSide = new javax.swing.JPanel();
         jPanelLeftTop = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
@@ -401,6 +405,10 @@ public class MainForm extends javax.swing.JFrame
         jComboBoxType.setFont(new java.awt.Font("Tahoma", 0, 12)); // NOI18N
         jComboBoxType.setModel(new javax.swing.DefaultComboBoxModel<>(new String[]{"diagnosis", "test", "treatment"}));
 
+        jLabelQueryTime.setFont(new java.awt.Font("Tahoma", 0, 12)); // NOI18N
+        jLabelQueryTime.setForeground(new java.awt.Color(255, 255, 255));
+        jLabelQueryTime.setSize(1000, 50);
+
         javax.swing.GroupLayout jPanelSearchLayout = new javax.swing.GroupLayout(jPanelSearch);
         jPanelSearch.setLayout(jPanelSearchLayout);
         jPanelSearchLayout.setHorizontalGroup(
@@ -419,7 +427,9 @@ public class MainForm extends javax.swing.JFrame
                                                 .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 183, javax.swing.GroupLayout.PREFERRED_SIZE))
                                         .addGroup(jPanelSearchLayout.createSequentialGroup()
                                                 .addGap(33, 33, 33)
-                                                .addComponent(jScrollPaneAnswers, javax.swing.GroupLayout.PREFERRED_SIZE, 600, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                                .addGroup(jPanelSearchLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                        .addComponent(jLabelQueryTime, javax.swing.GroupLayout.PREFERRED_SIZE, 400, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                        .addComponent(jScrollPaneAnswers, javax.swing.GroupLayout.PREFERRED_SIZE, 600, javax.swing.GroupLayout.PREFERRED_SIZE))))
                                 .addContainerGap(47, Short.MAX_VALUE))
         );
         jPanelSearchLayout.setVerticalGroup(
@@ -436,10 +446,11 @@ public class MainForm extends javax.swing.JFrame
                                         .addGroup(jPanelSearchLayout.createSequentialGroup()
                                                 .addGap(4, 4, 4)
                                                 .addComponent(jButtonSearch, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 40, Short.MAX_VALUE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 19, Short.MAX_VALUE)
+                                .addComponent(jLabelQueryTime)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(jScrollPaneAnswers, javax.swing.GroupLayout.PREFERRED_SIZE, 314, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(38, 38, 38))
-        );
+                                .addGap(38, 38, 38)));
 
         jLayeredPane3.add(jPanelSearch, "card2");
 
@@ -642,10 +653,8 @@ public class MainForm extends javax.swing.JFrame
         }
     }
 
-    private void jButtonSearchActionPerformed(java.awt.event.ActionEvent evt)
+    private void addDocumentResults(int number, float score, String path,  String content)
     {
-
-
         JPanel jp = new JPanel();
         jp.setPreferredSize(new Dimension(572, 75));
         jp.setMaximumSize(new Dimension(572, 75));
@@ -653,25 +662,25 @@ public class MainForm extends javax.swing.JFrame
 
         jp.setLayout(null);
 
-        JLabel scoreLabel = new JLabel("Score: 0.92");
+        JLabel scoreLabel = new JLabel(String.format("Score: %.4f", score));
         scoreLabel.setFont(new Font("Takahoma", Font.PLAIN, 13));
         scoreLabel.setForeground(Color.CYAN);
         jp.add(scoreLabel);
-        scoreLabel.setBounds(496, 50, 80, 20);
+        scoreLabel.setBounds(484, 50, 150, 20);
 
-        JLabel docNum = new JLabel("1");
+        JLabel docNum = new JLabel(String.valueOf(number));
         docNum.setFont(new Font("Takahoma", Font.BOLD, 18));
         docNum.setForeground(Color.white);
         jp.add(docNum);
         docNum.setBounds(20, 28, 80, 20);
 
-        JLabel docPath = new JLabel("C:\\Users\\alexp\\Desktop\\hy463 project\\MiniCollection");
+        JLabel docPath = new JLabel(path);
         docPath.setFont(new Font("Takahoma", Font.PLAIN, 13));
         docPath.setForeground(new Color(255, 153, 153));
         jp.add(docPath);
         docPath.setBounds(50, -3, 500, 30);
 
-        JLabel docContent = new JLabel("You need to add the same mouse listener to all you JLabels or whatever container you have for your images, like:");
+        JLabel docContent = new JLabel(content);
         docContent.setFont(new Font("Takahoma", Font.PLAIN, 14));
         docContent.setForeground(Color.white);
         jp.add(docContent);
@@ -682,12 +691,16 @@ public class MainForm extends javax.swing.JFrame
         jPanel1.add(Box.createRigidArea(new Dimension(20, 5)));
         jPanel1.add(jp);
 
+        jScrollPaneAnswers.revalidate();
+        jScrollPaneAnswers.repaint();
+
+        // Add mouse listeners to panels
         jp.addMouseListener(new MouseListener()
         {
             @Override
             public void mouseClicked(MouseEvent e)
             {
-                openFile("C:\\Users\\alexp\\Desktop\\hy463 project\\MiniCollection\\diagnosis\\Topic_1\\0\\1852545.nxml");
+                openFile(path);
             }
 
             @Override
@@ -716,11 +729,36 @@ public class MainForm extends javax.swing.JFrame
 
         });
 
+    }
 
-        jScrollPaneAnswers.revalidate();
-        jScrollPaneAnswers.repaint();
+    private void jButtonSearchActionPerformed(java.awt.event.ActionEvent evt)
+    {
+        if (jTextFieldQuery.getText().equals("")) return;
 
+        // Disable button
+        jButtonSearch.setEnabled(false);
 
+        // Remove all previous search results
+        jPanel1.removeAll();
+
+        // Start counting time
+        var startTime = currentTimeMillis();
+
+        // Query search
+        var docs = Search.search(jTextFieldQuery.getText());
+
+        // Print the time elapsed in seconds
+        float elapsedTime = (float) ((currentTimeMillis() - startTime) / 1000.0);
+        jLabelQueryTime.setText(" Query time: " + elapsedTime + " seconds");
+
+        int docNum = 1;
+        for (String doc : docs.keySet())
+        {
+            addDocumentResults(docNum++, docs.get(doc), "C://klpklp klp", "Edw dn kserw akoma ti na valw. hehehehe");
+        }
+
+        // Enable button
+        jButtonSearch.setEnabled(true);
     }
 
     private void jButtonSideIndexActionPerformed(java.awt.event.ActionEvent evt)
@@ -741,6 +779,9 @@ public class MainForm extends javax.swing.JFrame
         jLayeredPane3.revalidate();
         jButtonSideIndex.setForeground(new Color(255, 255, 255));
         jButtonSideSearch.setForeground(new Color(255, 153, 153));
+
+        // Load vocabulary and calculate document number
+        Search.Initialize();
     }
 
     private void jButtonSideIndexMouseEntered(java.awt.event.MouseEvent evt)
@@ -902,5 +943,7 @@ public class MainForm extends javax.swing.JFrame
     private javax.swing.JTextField jTextFieldQuery;
     private javax.swing.JLabel jTopLabel1;
     private javax.swing.JLabel jTopLabel2;
+    private javax.swing.JLabel jLabelQueryTime;
+
     // End of variables declaration
 }
