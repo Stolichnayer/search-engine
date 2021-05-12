@@ -1,5 +1,6 @@
 package evaluator;
 
+import gui.MainForm;
 import mitos.stemmer.Stemmer;
 
 import javax.swing.*;
@@ -19,9 +20,11 @@ public class Search
 {
     public static LinkedHashMap<String, Long[]> vocabulary = new LinkedHashMap<>();
 
-    public static String indexDirectory = "E:\\Projects\\idea-workspace\\hy463_project\\New folder\\CollectionIndex";
+    public static String indexDirectory = "CollectionIndex";
 
     public static int docNum;
+
+    public static HashMap<String, String> currentQueryFilePaths = new HashMap<>();
 
     public static String[] preprocessQuery(String query)
     {
@@ -54,7 +57,11 @@ public class Search
         }
         catch (Exception e)
         {
-            e.getStackTrace();
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null,
+                    e.getClass() + "\n" + e.getMessage(),
+                    "Directory Exception",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -275,6 +282,9 @@ public class Search
         String[] fixedQuery = preprocessQuery(query);
         var relevantDocs = new HashMap<String, Float>();
 
+        // Clear temporary file paths hashmap
+        currentQueryFilePaths.clear();
+
         try
         {
             RandomAccessFile file = new RandomAccessFile(indexDirectory + "\\PostingFile.txt", "r");
@@ -300,14 +310,30 @@ public class Search
                     float tf = Float.parseFloat(splitLine[2]);
                     long documentFilePointer = Long.parseLong(splitLine[splitLine.length - 1]);
 
+                    RandomAccessFile documentsFile = new RandomAccessFile(indexDirectory + "\\DocumentsFile.txt", "r");
+
+                    documentsFile.seek(documentFilePointer);
+
+                    String filePath = documentsFile.readLine().split(" ")[1];
+
                     relevantDocs.put(docID, tf);
+
+                    // We need this to save paths to display in query results
+                    currentQueryFilePaths.put(docID, filePath);
                 }
             }
         }
         catch (IOException e)
         {
             e.printStackTrace();
+            JOptionPane.showMessageDialog(null,
+                    e.getClass() + "\n" + e.getMessage(),
+                    "Directory Exception",
+                    JOptionPane.ERROR_MESSAGE);
         }
+
+        // If no relevant documents found
+        if (relevantDocs.size() == 0) return null;
 
         // Return relevant docs
         return rateDocs(relevantDocs, fixedQuery);
@@ -329,6 +355,10 @@ public class Search
         catch (IOException e)
         {
             e.printStackTrace();
+            JOptionPane.showMessageDialog(null,
+                    e.getClass() + "\n" + e.getMessage(),
+                    "Directory Exception",
+                    JOptionPane.ERROR_MESSAGE);
         }
 
     }
@@ -339,7 +369,7 @@ public class Search
         calculateDocNum();
     }
 
-    public static void main(String[] args)
+/*    public static void main(String[] args)
     {
 
         Initialize();
@@ -357,5 +387,5 @@ public class Search
         // Print the time elapsed in seconds
         float elapsedTime = (float) ((currentTimeMillis() - startTime) / 1000.0);
         System.out.println("   Time elapsed:    " + elapsedTime + " seconds.");
-    }
+    }*/
 }

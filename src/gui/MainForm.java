@@ -224,7 +224,7 @@ public class MainForm extends javax.swing.JFrame
 
         jLabel3.setFont(new java.awt.Font("Tahoma", 0, 16)); // NOI18N
         jLabel3.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel3.setText("Output folder");
+        jLabel3.setText("Index (Output) folder");
 
         jTextFieldOutput.setFont(new java.awt.Font("Tahoma", 0, 12)); // NOI18N
         jTextFieldOutput.setToolTipText("Enter path of output folder");
@@ -283,7 +283,7 @@ public class MainForm extends javax.swing.JFrame
                                                 .addComponent(jButtonBrowseOutput, javax.swing.GroupLayout.PREFERRED_SIZE, 141, javax.swing.GroupLayout.PREFERRED_SIZE))
                                         .addComponent(jScrollPaneInfo)
                                         .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 131, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 131, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 250, javax.swing.GroupLayout.PREFERRED_SIZE)
                                         .addGroup(jPanelIndexLayout.createSequentialGroup()
                                                 .addComponent(jTextFieldDocs, javax.swing.GroupLayout.PREFERRED_SIZE, 303, javax.swing.GroupLayout.PREFERRED_SIZE)
                                                 .addGap(4, 4, 4)
@@ -354,6 +354,7 @@ public class MainForm extends javax.swing.JFrame
         jButtonSearch.setMaximumSize(new java.awt.Dimension(39, 22));
         jButtonSearch.setMinimumSize(new java.awt.Dimension(39, 22));
         jButtonSearch.setOpaque(true);
+        jButtonSearch.setEnabled(false);
         jButtonSearch.addMouseListener(new java.awt.event.MouseAdapter()
         {
             public void mouseEntered(java.awt.event.MouseEvent evt)
@@ -647,13 +648,17 @@ public class MainForm extends javax.swing.JFrame
         {
             Runtime.getRuntime().exec("explorer.exe " + f.getAbsolutePath());
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            System.out.println("Error - " + ex);
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null,
+                    e.getClass() + "\n" + e.getMessage(),
+                    "Directory Exception",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void addDocumentResults(int number, float score, String path,  String content)
+    private void addDocumentResults(int number, float score, String fileName, String path,  String content)
     {
         JPanel jp = new JPanel();
         jp.setPreferredSize(new Dimension(572, 75));
@@ -674,11 +679,17 @@ public class MainForm extends javax.swing.JFrame
         jp.add(docNum);
         docNum.setBounds(20, 28, 80, 20);
 
+        JLabel docID = new JLabel(fileName);
+        docID.setFont(new Font("Takahoma", Font.PLAIN, 13));
+        docID.setForeground(new Color(3, 255, 150));
+        jp.add(docID);
+        docID.setBounds(50, -2, 200, 30);
+
         JLabel docPath = new JLabel(path);
         docPath.setFont(new Font("Takahoma", Font.PLAIN, 13));
         docPath.setForeground(new Color(255, 153, 153));
         jp.add(docPath);
-        docPath.setBounds(50, -3, 500, 30);
+        docPath.setBounds(150, -2, 420, 30);
 
         JLabel docContent = new JLabel(content);
         docContent.setFont(new Font("Takahoma", Font.PLAIN, 14));
@@ -686,6 +697,7 @@ public class MainForm extends javax.swing.JFrame
         jp.add(docContent);
         docContent.setBounds(50, 20, 500, 30);
 
+        jp.setToolTipText(path);
         jp.setCursor(new Cursor(Cursor.HAND_CURSOR));
         jPanel1.setLayout(new BoxLayout(jPanel1, BoxLayout.Y_AXIS));
         jPanel1.add(Box.createRigidArea(new Dimension(20, 5)));
@@ -744,6 +756,8 @@ public class MainForm extends javax.swing.JFrame
         // Start counting time
         var startTime = currentTimeMillis();
 
+        jLabelQueryTime.setText(" Searching...");
+
         // Query search
         var docs = Search.search(jTextFieldQuery.getText());
 
@@ -751,10 +765,14 @@ public class MainForm extends javax.swing.JFrame
         float elapsedTime = (float) ((currentTimeMillis() - startTime) / 1000.0);
         jLabelQueryTime.setText(" Query time: " + elapsedTime + " seconds");
 
-        int docNum = 1;
-        for (String doc : docs.keySet())
+        if (docs != null)
         {
-            addDocumentResults(docNum++, docs.get(doc), "C://klpklp klp", "Edw dn kserw akoma ti na valw. hehehehe");
+            int docNum = 1;
+            for (String doc : docs.keySet())
+            {
+                String path = Search.currentQueryFilePaths.get(doc);
+                addDocumentResults(docNum++, docs.get(doc), doc, path, "Edw dn kserw akoma ti na valw. hehehehe");
+            }
         }
 
         // Enable button
@@ -780,8 +798,45 @@ public class MainForm extends javax.swing.JFrame
         jButtonSideIndex.setForeground(new Color(255, 255, 255));
         jButtonSideSearch.setForeground(new Color(255, 153, 153));
 
+        // Change default path to output
+        String path = MainForm.instance.jTextFieldOutput.getText();
+        if (!MainForm.instance.jTextFieldOutput.getText().equals(""))
+        {
+            Search.indexDirectory = path;
+        }
+        else
+        {
+            Search.indexDirectory = "CollectionIndex";
+        }
+
         // Load vocabulary and calculate document number
-        Search.Initialize();
+        if (Search.vocabulary.size() == 0)
+        {
+            jLabelQueryTime.setText(" Loading vocabulary...");
+            Thread thread = new Thread()
+            {
+              public void run()
+              {
+                  Search.Initialize();
+                  if (Search.vocabulary.size() > 0)
+                  {
+                      jLabelQueryTime.setText(" Vocabulary loaded! Ready for search!");
+                      jButtonSearch.setEnabled(true);
+                  }
+                  else
+                  {
+                      jLabelQueryTime.setText(" There was an error loading vocabulary.");
+                  }
+
+
+              }
+            };
+
+            thread.start();
+
+
+        }
+
     }
 
     private void jButtonSideIndexMouseEntered(java.awt.event.MouseEvent evt)
@@ -870,6 +925,10 @@ public class MainForm extends javax.swing.JFrame
                 catch (Exception e)
                 {
                     e.printStackTrace();
+                    JOptionPane.showMessageDialog(null,
+                            e.getClass() + "\n" + e.getMessage(),
+                            "Directory Exception",
+                            JOptionPane.ERROR_MESSAGE);
                 }
             }
         };
@@ -939,7 +998,7 @@ public class MainForm extends javax.swing.JFrame
     public javax.swing.JTextArea jTextAreaIndexInfo;
     private javax.swing.JTextField jTextFieldDocs;
     private javax.swing.JTextField jTextFieldMemoryLimit;
-    private javax.swing.JTextField jTextFieldOutput;
+    public javax.swing.JTextField jTextFieldOutput;
     private javax.swing.JTextField jTextFieldQuery;
     private javax.swing.JLabel jTopLabel1;
     private javax.swing.JLabel jTopLabel2;
