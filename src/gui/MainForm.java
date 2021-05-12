@@ -802,7 +802,7 @@ public class MainForm extends javax.swing.JFrame
         String path = MainForm.instance.jTextFieldOutput.getText();
         if (!MainForm.instance.jTextFieldOutput.getText().equals(""))
         {
-            Search.indexDirectory = path;
+            Search.indexDirectory = path + "\\CollectionIndex";
         }
         else
         {
