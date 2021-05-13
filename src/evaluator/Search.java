@@ -153,13 +153,16 @@ public class Search
                 if (seek >= pointers.length - 1)
                 {
                     diff = fileSize - pointers[seek];
+                    System.out.println("if");
                 }
                 else
                 {
                     diff = pointers[seek + 1] - pointers[seek];
+                    System.out.println("else");
                 }
                 seek++;
 
+                System.out.println(word + " " + seek + ", " + diff);
                 byte[] arr = new byte[(int) (diff)];
 
                 // Read N bytes
@@ -186,20 +189,23 @@ public class Search
                     //System.out.println("------------------------");
 
                     String[] splitLine = line.split(" ");
+                    String fileName = splitLine[0];
+                    float tf = Float.parseFloat(splitLine[1]);
 
-                    //TODO: change this to 0  if remove term in postingfile
-                    if (docs.containsKey(splitLine[1]))
+                    //TODO: powo splitLine[1] --> splitLine[0]
+                    if (docs.containsKey(fileName))
                     {
                         // Add TF to the vector
-                        // TODO THIS TOO to 1
-                        float tf = Float.parseFloat(splitLine[2]);
+                        // TODO: powo splitLine[2] --> splitLine[1]
                         float idf = (float)(Math.log((float)docNum / df) / Math.log(2));
 
                         // Add tf idf weight to vector
-                        var value = docVector.get(splitLine[1]);
-                        value.add(tf * idf); //TODO PROSEXE tf idf
+                        // TODO: powo splitLine[1] --> splitLine[0]
+                        var value = docVector.get(fileName);
+                        value.add(tf * idf);
 
-                        flagMap.put(splitLine[1], true);
+                        // TODO: powo splitLine[1] --> splitLine[0]
+                        flagMap.put(fileName, true);
                     }
                 }
 
@@ -305,9 +311,9 @@ public class Search
                 {
                     String[] splitLine = file.readLine().split(" ");
 
-                    //TODO change 1 to 0
-                    String docID = splitLine[1];
-                    float tf = Float.parseFloat(splitLine[2]);
+                    //TODO: powo
+                    String docID = splitLine[0];
+                    float tf = Float.parseFloat(splitLine[1]);
                     long documentFilePointer = Long.parseLong(splitLine[splitLine.length - 1]);
 
                     RandomAccessFile documentsFile = new RandomAccessFile(indexDirectory + "\\DocumentsFile.txt", "r");

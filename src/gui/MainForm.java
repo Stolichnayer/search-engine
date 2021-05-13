@@ -767,7 +767,6 @@ public class MainForm extends javax.swing.JFrame
 
         if (docs != null)
         {
-            System.out.println("!= null");
             // Get type of the combobox
             String type = String.valueOf(jComboBoxType.getSelectedItem());
 
@@ -779,7 +778,6 @@ public class MainForm extends javax.swing.JFrame
                 // Document Type Filter
                 if (!type.equals("all") && !path.contains(type))
                 {
-                    System.out.println("Mpike");
                     continue;
                 }
 
