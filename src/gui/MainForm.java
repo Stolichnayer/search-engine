@@ -404,7 +404,7 @@ public class MainForm extends javax.swing.JFrame
         jScrollPaneAnswers.setViewportView(jPanel1);
 
         jComboBoxType.setFont(new java.awt.Font("Tahoma", 0, 12)); // NOI18N
-        jComboBoxType.setModel(new javax.swing.DefaultComboBoxModel<>(new String[]{"diagnosis", "test", "treatment"}));
+        jComboBoxType.setModel(new javax.swing.DefaultComboBoxModel<>(new String[]{"all", "diagnosis", "test", "treatment"}));
 
         jLabelQueryTime.setFont(new java.awt.Font("Tahoma", 0, 12)); // NOI18N
         jLabelQueryTime.setForeground(new java.awt.Color(255, 255, 255));
@@ -767,13 +767,30 @@ public class MainForm extends javax.swing.JFrame
 
         if (docs != null)
         {
+            System.out.println("!= null");
+            // Get type of the combobox
+            String type = String.valueOf(jComboBoxType.getSelectedItem());
+
             int docNum = 1;
             for (String doc : docs.keySet())
             {
                 String path = Search.currentQueryFilePaths.get(doc);
+
+                // Document Type Filter
+                if (!type.equals("all") && !path.contains(type))
+                {
+                    System.out.println("Mpike");
+                    continue;
+                }
+
                 addDocumentResults(docNum++, docs.get(doc), doc, path, "Edw dn kserw akoma ti na valw. hehehehe");
+
             }
         }
+
+        // We need this update show blank result after filtering
+        jScrollPaneAnswers.revalidate();
+        jScrollPaneAnswers.repaint();
 
         // Enable button
         jButtonSearch.setEnabled(true);
