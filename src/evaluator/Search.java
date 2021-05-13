@@ -25,6 +25,7 @@ public class Search
     public static int docNum;
 
     public static HashMap<String, String> currentQueryFilePaths = new HashMap<>();
+    public static HashMap<String, Long> currentWordPosition = new HashMap<>();
 
     public static String[] preprocessQuery(String query)
     {
@@ -206,6 +207,19 @@ public class Search
 
                         // TODO: powo splitLine[1] --> splitLine[0]
                         flagMap.put(fileName, true);
+
+                        // Saving position of word in file
+                        long position;
+                        try
+                        {
+                            position = Long.parseLong(splitLine[2].replaceAll("[^\\d.]", ""));
+                        }
+                        catch (Exception e)
+                        {
+                            position = 0;
+                        }
+                        // Add word position to map
+                        currentWordPosition.put(fileName, position);
                     }
                 }
 
@@ -290,6 +304,7 @@ public class Search
 
         // Clear temporary file paths hashmap
         currentQueryFilePaths.clear();
+        currentWordPosition.clear();
 
         try
         {

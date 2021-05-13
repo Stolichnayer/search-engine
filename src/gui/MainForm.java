@@ -10,6 +10,9 @@ import java.awt.Font;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import javax.swing.*;
 import javax.swing.text.DefaultCaret;
 
@@ -781,7 +784,33 @@ public class MainForm extends javax.swing.JFrame
                     continue;
                 }
 
-                addDocumentResults(docNum++, docs.get(doc), doc, path, "Edw dn kserw akoma ti na valw. hehehehe");
+                // Get file content that include (maybe) the word
+                String content = "";
+                try
+                {
+                    RandomAccessFile file = new RandomAccessFile(path, "r");
+                    long position = Search.currentWordPosition.get(doc);
+
+                    if (position - 10 > 0)
+                    {
+                        file.seek(position - 10);
+                    }
+
+                    // Read the next 100 bytes of the file
+                    byte[] bytes = new byte[100];
+                    file.readFully(bytes);
+                    content = new String(bytes);
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(null,
+                            e.getClass() + "\n" + e.getMessage(),
+                            "File content exception",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+
+                addDocumentResults(docNum++, docs.get(doc), doc, path, "..." + content);
 
             }
         }
