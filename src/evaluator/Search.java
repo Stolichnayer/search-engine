@@ -105,8 +105,6 @@ public class Search
 
                 float tfIdf = tf * idf;
                 queryVector.add(tfIdf);
-                System.out.println("position = " + position + ", df = " + df + ", idf = " + idf + ", tf = " + tf + ", tf-idf = " + tfIdf);
-
             }
         }
 
@@ -140,8 +138,14 @@ public class Search
 
             // For every term in vocabulary
             int seek = 0;
+
+            //System.out.println("vocabulary size: " + vocabulary.size());
+
+            int a = 0;
             for (String word : vocabulary.keySet())
             {
+                //System.out.println("Word: " + a++ + "of " + vocabulary.size());
+
                 // Number of documents that contain the term
                 int df = (vocabulary.get(word)[0]).intValue();
                 // Pointer to PostingFile.txt
@@ -154,26 +158,25 @@ public class Search
                 if (seek >= pointers.length - 1)
                 {
                     diff = fileSize - pointers[seek];
-                    System.out.println("if");
                 }
                 else
                 {
                     diff = pointers[seek + 1] - pointers[seek];
-                    System.out.println("else");
                 }
                 seek++;
 
-                System.out.println(word + " " + seek + ", " + diff);
                 byte[] arr = new byte[(int) (diff)];
 
                 // Read N bytes
                 file.readFully(arr);
                 String section = new String(arr);
 
+
                 for (int i = 0; i < df; ++i)
                 {
+                    //System.out.println(i + " of " + df);
+
                     int index =  section.indexOf('\n');
-                    //System.out.println(" \n\nINDEX = [" + index + "]\n\n");
 
                     String line = "";
                     if (index != -1)
@@ -185,9 +188,6 @@ public class Search
                     {
                         line = section;
                     }
-
-                   // System.out.println(line);
-                    //System.out.println("------------------------");
 
                     String[] splitLine = line.split(" ");
                     String fileName = splitLine[0];
@@ -257,18 +257,29 @@ public class Search
 
     public static LinkedHashMap<String, Float> rateDocs(HashMap<String, Float> docs, String[] query)
     {
+        //System.out.println("Starting rateDocs");
         // LinkedHashMap keeps the order of insertion
         //                                 docID, score
         var ratedDocs = new LinkedHashMap<String, Float>();
 
+        printCurrentMemory();
+
         // Calculate the query vector
         var queryVector = calculateQueryVector(query);
 
+        //System.out.println("Start calculateDocVector(docs)...");
         // Calculate vector of the documents found
         var docVectorMap = calculateDocVector(docs);
 
+        //System.out.println("Finished calculateDocVector(docs)");
+
+        //System.out.println("Starting doc : docVectorMap..size: " + docVectorMap.size());
+
+        int a = 0;
         for (String doc : docVectorMap.keySet())
         {
+            //System.out.println(a++);
+
             var docVector = docVectorMap.get(doc);
 
             float scoreNumerator = 0;
@@ -289,12 +300,20 @@ public class Search
             ratedDocs.put(doc, cosSim);
         }
 
+        //System.out.println("Finishing rateDocs...starting sorting");
+
         // Sort documents by score (sort HashMap by value)
         return ratedDocs.entrySet().stream()
                 .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
                         (e1, e2) -> e2, LinkedHashMap::new));
 
+    }
+
+    public static void printCurrentMemory()
+    {
+        long memory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        //System.out.println(memory);
     }
 
     public static LinkedHashMap<String, Float> search(String query)
@@ -342,6 +361,8 @@ public class Search
                     // We need this to save paths to display in query results
                     currentQueryFilePaths.put(docID, filePath);
                 }
+
+                //System.out.println("Query term");
             }
         }
         catch (IOException e)
@@ -355,6 +376,10 @@ public class Search
 
         // If no relevant documents found
         if (relevantDocs.size() == 0) return null;
+
+        //System.out.println(relevantDocs);
+
+        //System.out.println("Finished search function, size: " + relevantDocs.size());
 
         // Return relevant docs
         return rateDocs(relevantDocs, fixedQuery);
