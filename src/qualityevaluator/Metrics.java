@@ -55,7 +55,7 @@ public class Metrics
         float sum = 0; // of bpref Type
         for (String fileID : retrievedDocs)
         {
-            System.out.println(topicNum + ", " + fileID);
+            //System.out.println(topicNum + ", " + fileID);
             if (!allFilesWeHaveInfo.containsKey(fileID))
             {
                 notJudgedCounter++; // Not exists in qrels.txt

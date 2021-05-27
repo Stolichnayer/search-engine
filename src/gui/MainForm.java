@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Objects;
 import javax.swing.*;
 import javax.swing.text.DefaultCaret;
 
@@ -127,7 +128,7 @@ public class MainForm extends javax.swing.JFrame
         jButtonIndex.setBackground(new java.awt.Color(34, 41, 71));
         jButtonIndex.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         jButtonIndex.setForeground(new java.awt.Color(255, 255, 255));
-        jButtonIndex.setIcon(new javax.swing.ImageIcon("C:\\Users\\alexp\\Desktop\\index.png")); // NOI18N
+        jButtonIndex.setIcon(new javax.swing.ImageIcon(getClass().getResource("/index.png"))); // NOI18N
         jButtonIndex.setText("Index");
         jButtonIndex.setToolTipText(null);
         jButtonIndex.setBorder(javax.swing.BorderFactory.createEtchedBorder());
@@ -347,7 +348,7 @@ public class MainForm extends javax.swing.JFrame
         jButtonSearch.setBackground(new java.awt.Color(34, 41, 71));
         jButtonSearch.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
         jButtonSearch.setForeground(new java.awt.Color(255, 255, 255));
-        jButtonSearch.setIcon(new javax.swing.ImageIcon("C:\\Users\\alexp\\Desktop\\search.png")); // NOI18N
+        jButtonSearch.setIcon(new javax.swing.ImageIcon(getClass().getResource("/search.png"))); // NOI18N
         jButtonSearch.setText("Search");
         jButtonSearch.setToolTipText(null);
         jButtonSearch.setBorder(javax.swing.BorderFactory.createEtchedBorder());
@@ -383,7 +384,7 @@ public class MainForm extends javax.swing.JFrame
 
         jLabel4.setFont(new java.awt.Font("Tahoma", 0, 16)); // NOI18N
         jLabel4.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel4.setIcon(new javax.swing.ImageIcon("C:\\Users\\alexp\\Desktop\\med.png")); // NOI18N
+        jLabel4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/med.png"))); // NOI18N
 
         jScrollPaneAnswers.setBackground(new java.awt.Color(51, 255, 204));
         jScrollPaneAnswers.setBorder(null);
@@ -462,7 +463,7 @@ public class MainForm extends javax.swing.JFrame
 
         jPanelLeftTop.setBackground(new java.awt.Color(24, 30, 54));
 
-        jLabel1.setIcon(new javax.swing.ImageIcon("C:\\Users\\alexp\\Desktop\\search-engine.png")); // NOI18N
+        jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/search-engine.png"))); // NOI18N
 
         javax.swing.GroupLayout jPanelLeftTopLayout = new javax.swing.GroupLayout(jPanelLeftTop);
         jPanelLeftTop.setLayout(jPanelLeftTopLayout);

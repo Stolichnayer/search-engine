@@ -64,14 +64,14 @@ public class IRQualityEvaluator
             String topicSummary = topic.getSummary();
             String topicDescription = topic.getDescription();
 
-            var results = Search.search(topic.getSummary());
+            var results = Search.search(topicSummary);
 
             if (results != null)
             {
                 int rank = 1;
                 for (String doc : results.keySet())
                 {
-                    String row = topicNum + " 0 " + doc.substring(0, doc.length() - 5) + " "  + rank++ + " " + String.format("%,5f", results.get(doc)) + " SUMMARY_STD_No1\n";
+                    String row = topicNum + " 0 " + doc.substring(0, doc.length() - 5) + " "  + rank++ + " " + String.format("%,5f", results.get(doc)) + " SUMMARY_STD_NO_WEIGHTING\n";
                     System.out.println(row);
                     fos.write(row.getBytes(StandardCharsets.UTF_8));
                 }
@@ -100,5 +100,7 @@ public class IRQualityEvaluator
     {
         readTopicsAndSearch();
         writeEvalResultsFile();
+
+        System.out.println("Finished Quality evaluation.");
     }
 }
